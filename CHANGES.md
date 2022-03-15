@@ -1,6 +1,47 @@
 Changelog
 =========
 
+2.2.1
+-----
+
+* Fix ``--user-only`` and ``--freeze`` flags which were broken after
+  the last release.
+
+* Fix for compatibility with new version of ``graphviz`` (>= 0.18.1).
+
+2.2.0
+-----
+
+* Fix pipdeptree to work with pip version 21.3. The _internal pip api
+  that was being used earlier is now replaced with new functions. (PR
+  #154)
+
+2.1.0
+-----
+
+* JSON output is sorted alphabetically to make it deterministic
+
+* Fix --freeze option due to breaking changes in pip's internal api in
+  version > 21.1.1
+
+* Include license file in dist package
+
+2.0.0
+-----
+
+* Support for running in the context of a virtualenv (without
+  installing pipdeptree inside the virtualenv)
+
+* Avoid crash when rendering cyclic dependencies
+
+* Fix graphviz (dot file) output
+
+* Handle a (rare) case while guessing version of a package
+
+* Migrate from travisCI to Github workflows
+
+* Improve integration tests
+
 2.0.0b1 (beta version)
 ----------------------
 
@@ -34,8 +75,8 @@ Changelog
 
 * Move continuous integration from Travis to Github Actions.
 
-1.0.0 (current stable version)
-------------------------------
+1.0.0
+-----
 
 * Use `pkg_resources` vendored with `pip`.
 
