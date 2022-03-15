@@ -1,6 +1,7 @@
 from __future__ import print_function
 import os
 import inspect
+import functools
 import sys
 import subprocess
 from itertools import chain
@@ -158,6 +159,7 @@ class DistPackage(Package):
     def is_extra_rel(self):
         return self.rel and self.rel.extra is not None
 
+    @functools.cache
     def extra_requires(self):
         md_key = 'METADATA'
         if not self.has_metadata(md_key):
@@ -169,6 +171,15 @@ class DistPackage(Package):
                 extra = line.split()[-1].strip("'")
                 extras[dep].append(extra)
         return {pkg_resources.Requirement(k): v for k, v in extras.items()}
+
+    def extra_requires_by_group(self):
+        extra_requires = self.extra_requires()
+        groups = defaultdict(list)
+        for requirement, req_groups in extra_requires.items():
+            for req_group in req_groups:
+                groups[req_group].append(requirement)
+
+        return groups
 
     def render_as_root(self, frozen):
         if not frozen:
@@ -360,10 +371,21 @@ class PackageDAG(Mapping):
                  for r in p.requires()]
              for p in pkgs}
         for p, rs in m.items():
+            # Consider any package from the group as a dependency only if the entire group is present
+            extras_by_group = p.extra_requires_by_group()
+            present_groups = set()
+
+            # First figure out which optional groups have all the dependencies
+            for group, requirements in extras_by_group.items():
+                if all(req.key in idx for req in requirements):
+                    present_groups.add(group)
+
+            # Then add extra dependencies for those groups only
             extras = p.extra_requires()
             for extra, profiles in extras.items():
-                if extra.key in idx:
-                    rel = PkgRelation(p, 'required_by', ','.join(profiles))
+                present_profiles = set(profiles) & present_groups
+                if present_profiles and extra.key in idx:
+                    rel = PkgRelation(p, 'required_by', ','.join(present_profiles))
                     r = ReqPackage(extra, dist=idx[extra.key], rel=rel)
                     m[p].append(r)
         return cls(m, filters)
